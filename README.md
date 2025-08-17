@@ -21,7 +21,7 @@ samples, guidance on mobile development, and a full API reference.
 ![Home Screen](assets/img/Einnahme.png)
 ![Home Screen](assets/img/Leiste.png)
 ![Home Screen](assets/img/Hauptseite.png)
-![Home Screen](assets/img/Budget.png.png)
+![Home Screen](assets/img/Budget.png)
 ![Home Screen](assets/img/Kalender.png)
 ![Home Screen](assets/img/Ausgabe.png)
 ![Home Screen](assets/img/Kategorie.png)
