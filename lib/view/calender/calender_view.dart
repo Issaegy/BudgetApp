@@ -183,7 +183,7 @@ class _CalenderViewState extends State<CalenderView> {
                         ),
                       ),
                       Text(
-                        "in der zukünftigen Rechnung",
+                        "",
                         style: TextStyle(
                           color: TColor.gray30,
                           fontSize: 12,

@@ -45,6 +45,15 @@ class _SpendingState extends State<SpendingView> {
     },
   ];
 
+  // einfache Farbrotation für neue Kategorien
+  final List<Color> _newCategoryColors = [
+    TColor.secondaryG,
+    TColor.secondary50,
+    TColor.primary10,
+    TColor.secondary,
+  ];
+  int _colorIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.sizeOf(context);
@@ -61,16 +70,18 @@ class _SpendingState extends State<SpendingView> {
                 Container(
                   width: media.width * 0.5,
                   height: media.width * 0.30,
-                    padding: EdgeInsets.only(bottom: media.width * 0.05),
-                    child: CustomPaint(
-                      painter: CustomArch180Painter(
-                        drwArcs: [ArcValueModel(color: TColor.secondaryG, value: 20),
+                  padding: EdgeInsets.only(bottom: media.width * 0.05),
+                  child: CustomPaint(
+                    painter: CustomArch180Painter(
+                      drwArcs: [
+                        ArcValueModel(color: TColor.secondaryG, value: 20),
                         ArcValueModel(color: TColor.secondary, value: 45),
-                        ArcValueModel(color: TColor.primary10, value: 70)],
-                        end: 50,
-                        width: 12,
-                        bgwidth: 8,
-                     ),
+                        ArcValueModel(color: TColor.primary10, value: 70)
+                      ],
+                      end: 50,
+                      width: 12,
+                      bgwidth: 8,
+                    ),
                   ),
                 ),
                 Column(
@@ -96,9 +107,7 @@ class _SpendingState extends State<SpendingView> {
               ],
             ),
 
-            const SizedBox(
-              height: 40,
-            ),
+            const SizedBox(height: 40),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -150,7 +159,7 @@ class _SpendingState extends State<SpendingView> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: () {},
+                onTap: () => _showAddCategoryDialog(context), // <-- HIER
                 child: Container(
                   height: 64,
                   padding: const EdgeInsets.all(10),
@@ -190,6 +199,124 @@ class _SpendingState extends State<SpendingView> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Dialog: neue Kategorie anlegen (Name + Budget)
+  void _showAddCategoryDialog(BuildContext context) {
+    final TextEditingController nameCtrl = TextEditingController();
+    final TextEditingController budgetCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: TColor.gray70,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            "Neue Kategorie",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: "Name der Kategorie",
+                    labelStyle: TextStyle(color: TColor.gray30),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: TColor.gray30),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: budgetCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Vorgesehenes Budget",
+                    labelStyle: TextStyle(color: TColor.gray30),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: TColor.gray30),
+                    ),
+                    focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    prefixText: "€ ",
+                    prefixStyle: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Abbrechen", style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                final budget = double.tryParse(
+                  budgetCtrl.text.replaceAll(',', '.'),
+                );
+
+                // Validierung
+                if (name.isEmpty || budget == null || budget <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Bitte gültigen Namen und Budget angeben."),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                // Duplikate verhindern (Case-insensitive)
+                final exists = budgetArr.any((e) =>
+                  (e["name"] as String).toLowerCase() == name.toLowerCase()
+                );
+                if (exists) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Diese Kategorie existiert bereits."),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+
+                // Farbe rotieren
+                final color = _newCategoryColors[_colorIndex % _newCategoryColors.length];
+                _colorIndex++;
+
+                // Kategorie hinzufügen (Start: höhe=0, übriger Betrag=Budget)
+                setState(() {
+                  budgetArr.add({
+                    "name": name,
+                    "icon": Icons.category,
+                    "höhe": "0.00",
+                    "gesamtbetrag": budget.toStringAsFixed(2),
+                    "übriger Betrag": budget.toStringAsFixed(2),
+                    "color": color,
+                  });
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: const Text("Speichern", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
