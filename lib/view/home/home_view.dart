@@ -3,9 +3,7 @@
 import 'package:budgetapp_fl/common/color_extension.dart';
 import 'package:budgetapp_fl/common_widget/bill.dart';
 import 'package:budgetapp_fl/common_widget/custom_arch_painter.dart';
-import 'package:budgetapp_fl/common_widget/segment_button.dart';
 import 'package:budgetapp_fl/common_widget/status.dart';
-import 'package:budgetapp_fl/common_widget/subscription.dart';
 import 'package:budgetapp_fl/view/setting/setting_view.dart';
 import 'package:flutter/material.dart';
 
@@ -17,27 +15,8 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  bool isSubscription = true;
-
-  List<Map<String, dynamic>> subArr = [
-    {
-      "name": "Spotify",
-      "icon": Icons.music_note,
-      "preis": 5.99,
-    },
-    {
-      "name": "YouTube Premium",
-      "icon": Icons.play_circle_fill,
-      "preis": 18.99,
-    },
-    {
-      "name": "Netflix",
-      "icon": Icons.movie,
-      "preis": 15.00,
-    },
-  ];
-
-  List bilArr = [
+  // Nur noch Rechnungen/Verlauf
+  final List<Map<String, dynamic>> bilArr = [
     {"name": "Spotify", "date": DateTime(2025, 07, 25), "price": 5.99},
     {"name": "YouTube Premium", "date": DateTime(2025, 07, 25), "price": 18.99},
     {"name": "Netflix", "date": DateTime(2025, 07, 25), "price": 15.00},
@@ -46,11 +25,21 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     var media = MediaQuery.sizeOf(context);
+
+    // Kopie sortieren: neueste zuerst
+    final sortedBills = [...bilArr]
+      ..sort((a, b) {
+        final ad = (a["date"] as DateTime?) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bd = (b["date"] as DateTime?) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bd.compareTo(ad);
+      });
+
     return Scaffold(
       backgroundColor: TColor.gray,
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Header / Überblick
             Container(
               height: media.width * 1.1,
               padding: const EdgeInsets.all(20),
@@ -69,64 +58,52 @@ class _HomeViewState extends State<HomeView> {
                     width: media.width * 0.72,
                     height: media.width * 0.72,
                     child: CustomPaint(
-                      painter: CustomArchPainter(end: 220, ),
+                      painter: CustomArchPainter(end: 220),
                     ),
                   ),
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-
-                     SizedBox(
-                        height: media.width * 0.05,
-                      ),
+                      SizedBox(height: media.width * 0.05),
                       Text(
                         "\$1,235",
                         style: TextStyle(
                           color: TColor.white,
                           fontSize: 40,
-                          fontWeight: FontWeight.w700
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(
-                        height: media.width * 0.05,
+                      SizedBox(height: media.width * 0.05),
+                      Text(
+                        "Dieser Monat",
+                        style: TextStyle(
+                          color: TColor.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-
-                  Text(
-                    "Dieser Monat",
-                    style: TextStyle(
-                      color: TColor.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700
-                    ),
-                  ),
-
-                  SizedBox(
-                        height: media.width * 0.05,
-                      ),
-
-                  InkWell(
-                    onTap: (){},
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration:
-                      BoxDecoration(
-                        border: Border.all(
-                          color: TColor.border.withOpacity(0.15)
+                      SizedBox(height: media.width * 0.05),
+                      InkWell(
+                        onTap: () {},
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: TColor.border.withOpacity(0.15)),
+                            color: TColor.gray70.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                        color: TColor.gray70.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(16),
+                          child: Text(
+                            "Dein Budget",
+                            style: TextStyle(
+                              color: TColor.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Text(
-                      "Dein Budget",
-                      style: TextStyle(
-                        color:TColor.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    )
-                 ],
-                ),
+                    ],
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(5),
                     child: Column(
@@ -136,8 +113,8 @@ class _HomeViewState extends State<HomeView> {
                           children: [
                             Expanded(
                               child: Status(
-                                title: "Aktive",
-                                value: "12",
+                                title: "Belege",
+                                value: "${sortedBills.length}",
                                 statusColor: TColor.secondary,
                                 onPressed: () {},
                               ),
@@ -145,8 +122,8 @@ class _HomeViewState extends State<HomeView> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Status(
-                                title: "Höchste Wert",
-                                value: "\$19.99",
+                                title: "Höchster Betrag",
+                                value: _formatCurrency(_max(sortedBills)),
                                 statusColor: TColor.primary10,
                                 onPressed: () {},
                               ),
@@ -154,8 +131,8 @@ class _HomeViewState extends State<HomeView> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Status(
-                                title: "Niedrigster Wert",
-                                value: "\$5.99",
+                                title: "Niedrigster Betrag",
+                                value: _formatCurrency(_min(sortedBills)),
                                 statusColor: TColor.secondaryG,
                                 onPressed: () {},
                               ),
@@ -168,79 +145,61 @@ class _HomeViewState extends State<HomeView> {
                 ],
               ),
             ),
+
             const SettingsBar(),
-            
+
+            // Titel "Rechnungsverlauf"
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8.0),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SegmentButton(
-                      title: "Verbindlichkeiten",
-                      isActive: isSubscription,
-                      onPressed: () {
-                        setState(() {
-                          isSubscription = !isSubscription;
-                        });
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: SegmentButton(
-                      title: "Rechnungen",
-                      isActive: !isSubscription,
-                      onPressed: () {
-                        setState(() {
-                          isSubscription = !isSubscription;
-                        });
-                      },
-                    ),
-                  ),
-                ],
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Text(
+                "Rechnungsverlauf",
+                style: TextStyle(
+                  color: TColor.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-            if (isSubscription)
-              ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: subArr.length,
-                itemBuilder: (context, index) {
-                  var sObj = subArr[index] as Map? ?? {};
-                  return SubscriptionHomeRow(
-                    sObj: sObj,
-                    onPressed: () {},
-                  );
-                },
-              ),
-            if (!isSubscription)
-              ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: bilArr.length,
-                itemBuilder: (context, index) {
-                  var sObj = bilArr[index] as Map? ?? {};
-                  return Bill(
-                    sObj: sObj,
-                    onPressed: () {},
-                  );
-                },
-              ),
-            const SizedBox(
-              height: 110,
+            
+            ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: sortedBills.length,
+              itemBuilder: (context, index) {
+                final sObj = sortedBills[index];
+                return Bill(
+                  sObj: sObj,
+                  onPressed: () {},
+                );
+              },
             ),
+
+            const SizedBox(height: 110),
           ],
         ),
       ),
     );
+  }
+
+  // Helpers
+  static String _formatCurrency(double? v) {
+    if (v == null) return "-";
+    return "\$${v.toStringAsFixed(2)}";
+  }
+
+  static double? _max(List<Map<String, dynamic>> items) {
+    if (items.isEmpty) return null;
+    return items
+        .map((e) => (e["price"] as num?)?.toDouble() ?? 0.0)
+        .fold<double>(0.0, (p, c) => c > p ? c : p);
+  }
+
+  static double? _min(List<Map<String, dynamic>> items) {
+    if (items.isEmpty) return null;
+    return items
+        .map((e) => (e["price"] as num?)?.toDouble() ?? 0.0)
+        .reduce((a, b) => a < b ? a : b);
   }
 }

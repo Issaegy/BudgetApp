@@ -25,3 +25,4 @@ samples, guidance on mobile development, and a full API reference.
 ![Home Screen](assets/img/Kalender.png)
 ![Home Screen](assets/img/Ausgabe.png)
 ![Home Screen](assets/img/Kategorie.png)
+![Home Screen](assets/img/Rechnungsverlauf.png)
